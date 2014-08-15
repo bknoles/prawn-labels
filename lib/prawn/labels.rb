@@ -119,7 +119,7 @@ module Prawn
         @document.bounding_box(
           label_top_left(record, b.width, b.height, b.top_left), 
           :width => text_width(record, b.width) + width_buffer, 
-          :height => text_height(record, b.width)
+          :height => text_height(record, b.width) + height_buffer
         ) do
           yield @document, record
         end
@@ -165,7 +165,8 @@ module Prawn
       end   
 
       longest_line = split_lines.inject do |mem_obj, line|
-        line.length > mem_obj.length ? line : mem_obj
+        @document.width_of(line, size: @document.font_size) > 
+        @document.width_of(mem_obj, size: @document.font_size) ? line : mem_obj
       end
 
       @document.width_of(longest_line,  size: @document.font_size)
@@ -175,7 +176,6 @@ module Prawn
     def text_height(record, box_width)
       fake_text = ""
       num_lines = number_of_lines(record, box_width)
-      puts num_lines
       num_lines.times do
         fake_text += "Fake\n"
       end
