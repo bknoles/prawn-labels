@@ -61,7 +61,6 @@ module Prawn
                                 :right_margin   => type["right_margin"])
 
       @document.font options[:font_path] if options[:font_path]
-      @document.font_size = options[:font_size] if options[:font_size]
                                 
       generate_grid @type
 
@@ -113,6 +112,7 @@ module Prawn
         end
       else
         #Shrink text if our label doesn't fit vertically within the bounding box
+        @document.font_size = options[:font_size] if options[:font_size]        
         while text_height(record, b.width) > b.height
           @document.font_size -= 1
         end
