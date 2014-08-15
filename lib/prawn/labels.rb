@@ -59,6 +59,9 @@ module Prawn
                                 :bottom_margin  => type["bottom_margin"],
                                 :left_margin    => type["left_margin"],
                                 :right_margin   => type["right_margin"])
+
+      @document.font options[:font_path] if options[:font_path]
+      @document.font_size = options[:font_size] if options[:font_size]
                                 
       generate_grid @type
 
@@ -109,7 +112,15 @@ module Prawn
           end
         end
       else
-        @document.bounding_box b.top_left, :width => b.width, :height => b.height do
+        #Shrink text if our label doesn't fit vertically within the bounding box
+        while text_height(record, b.width) > b.height
+          @document.font_size -= 1
+        end
+        @document.bounding_box(
+          label_top_left(record, b.width, b.height, b.top_left), 
+          :width => text_width(record, b.width) + width_buffer, 
+          :height => text_height(record, b.width)
+        ) do
           yield @document, record
         end
       end
@@ -131,5 +142,63 @@ module Prawn
         @document.font_size = rowheight / (linecount + 1)
       end
     end
+
+    # Calculate the top left of each label based on height and width of the bounding box.
+    # This will center the bounding box horizontally and vertically within the grid cell
+    def label_top_left(record, box_width, box_height, box_top_left)
+      left = box_top_left[0] + (box_width - text_width(record, box_width))/2 - width_buffer
+      right = box_top_left[1] - (box_height - text_height(record, box_width))/2 - height_buffer
+      [left, right]
+    end
+
+    def text_width(record, box_width)
+      split_lines = record.split("\n")
+
+      # Chop words off of lines which exceed the box width until they fit within the box
+      split_lines.each_with_index do |line, i|
+        if @document.width_of(line, size: @document.font_size) > box_width
+          while @document.width_of(line, size: @document.font_size) > box_width
+            line = line[0...line.rindex(' ')]
+          end
+          split_lines[i] = line
+        end
+      end   
+
+      longest_line = split_lines.inject do |mem_obj, line|
+        line.length > mem_obj.length ? line : mem_obj
+      end
+
+      @document.width_of(longest_line,  size: @document.font_size)
+    end
+
+    # Determine the height of the text for a given bounding box width
+    def text_height(record, box_width)
+      fake_text = ""
+      num_lines = number_of_lines(record, box_width)
+      puts num_lines
+      num_lines.times do
+        fake_text += "Fake\n"
+      end
+      @document.height_of(fake_text)
+    end
+    
+    # Determine the number of lines that a record will use given the bounding box width
+    def number_of_lines(record, box_width)
+      split_lines = record.split("\n")
+
+      extra_lines = 0
+      split_lines.each do |line|
+        if @document.width_of(line, size: @document.font_size) > box_width
+          extra_lines += 1
+        end
+      end
+
+      split_lines.length + extra_lines
+    end
+
+    # A buffer value to ensure that text doesn't overflow our bounding box
+    def width_buffer; 5; end
+    def height_buffer; 5; end
+
   end
 end
