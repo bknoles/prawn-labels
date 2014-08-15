@@ -151,9 +151,9 @@ module Prawn
     # Calculate the top left of each label based on height and width of the bounding box.
     # This will center the bounding box horizontally and vertically within the grid cell
     def label_top_left(record, box_width, box_height, box_top_left)
-      left = box_top_left[0] + (box_width - text_width(record, box_width))/2 - width_buffer
-      right = box_top_left[1] - (box_height - text_height(record, box_width))/2 - height_buffer
-      [left, right]
+      left = (box_width - text_width(record, box_width) - width_buffer)/2
+      top = @document.bounds.top - (box_height - text_height(record, box_width))/2
+      [left, top]
     end
 
     def text_width(record, box_width)
@@ -161,8 +161,8 @@ module Prawn
 
       # Chop words off of lines which exceed the box width until they fit within the box
       split_lines.each_with_index do |line, i|
-        if @document.width_of(line, size: @document.font_size) > box_width
-          while @document.width_of(line, size: @document.font_size) > box_width
+        if buffered_line_width(line) >= box_width
+          while buffered_line_width(line) >= box_width
             line = line[0...line.rindex(' ')]
           end
           split_lines[i] = line
@@ -170,11 +170,10 @@ module Prawn
       end   
 
       longest_line = split_lines.inject do |mem_obj, line|
-        @document.width_of(line, size: @document.font_size) > 
-        @document.width_of(mem_obj, size: @document.font_size) ? line : mem_obj
+        buffered_line_width(line) > buffered_line_width(mem_obj) ? line : mem_obj
       end
 
-      @document.width_of(longest_line,  size: @document.font_size)
+      buffered_line_width(longest_line)
     end
 
     # Determine the height of the text for a given bounding box width
@@ -193,17 +192,19 @@ module Prawn
 
       extra_lines = 0
       split_lines.each do |line|
-        if @document.width_of(line, size: @document.font_size) > box_width
-          extra_lines += 1
+        if buffered_line_width(line) > box_width
+          extra_lines += (buffered_line_width(line)/box_width).ceil.to_i
         end
       end
-
       split_lines.length + extra_lines
     end
 
+    def buffered_line_width(line)
+      @document.width_of(line, size: @document.font_size) + width_buffer
+    end
+
     # A buffer value to ensure that text doesn't overflow our bounding box
-    def width_buffer; 5; end
-    def height_buffer; 5; end
+    def width_buffer; 1; end
 
   end
 end
