@@ -48,6 +48,7 @@ module Prawn
       type["paper_size"]  ||= "A4"
       type["top_margin"]  ||= 36
       type["left_margin"] ||= 36
+      type["page_layout"] ||= :portrait
       
       options[:document] ||= {}
       
@@ -58,7 +59,9 @@ module Prawn
                                 :top_margin     => type["top_margin"],
                                 :bottom_margin  => type["bottom_margin"],
                                 :left_margin    => type["left_margin"],
-                                :right_margin   => type["right_margin"])
+                                :right_margin   => type["right_margin"],
+                                :page_layout    => type["page_layout"].to_sym
+      )
 
       @document.font options[:font_path] if options[:font_path]
                                 
