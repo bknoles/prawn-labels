@@ -116,18 +116,24 @@ module Prawn
       else
         #Shrink text if our label doesn't fit vertically within the bounding box
         @document.font_size = options[:font_size] if options[:font_size]        
-        while text_height(record, b.width) > b.height
-          @document.font_size -= 1
+        if options[:auto_center] == true
+          while text_height(record, b.width) > b.height
+            @document.font_size -= 1
+          end
         end
         @document.bounding_box b.top_left, :width => b.width, :height => b.height do
         
           #@document.stroke_bounds
-          @document.bounding_box(
-            label_top_left(record, b.width, b.height, b.top_left), 
-            :width => text_width(record, b.width) + width_buffer, 
-            :height => text_height(record, b.width)
-          ) do
-            #@document.stroke_bounds
+          if options[:auto_center] == true
+            @document.bounding_box(
+              label_top_left(record, b.width, b.height, b.top_left), 
+              :width => text_width(record, b.width) + width_buffer, 
+              :height => text_height(record, b.width)
+            ) do
+              #@document.stroke_bounds
+              yield @document, record
+            end
+          else
             yield @document, record
           end
         end
