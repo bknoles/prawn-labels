@@ -71,8 +71,8 @@ module Prawn
         if (defined? record.vertical_text)
           options.merge!(:vertical_text => record.vertical_text)
         end
-        create_label(index, record, options) do |pdf, record|
-          yield pdf, record
+        create_label(index, record, options) do |pdf, record, index|
+          yield pdf, record, index
         end
       end
 
@@ -109,7 +109,7 @@ module Prawn
         @document.rotate(270, :origin => b.top_left) do
           @document.translate(0, b.width) do
             @document.bounding_box b.top_left, :width => b.height, :height => b.width do
-              yield @document, record
+              yield @document, record, index
             end
           end
         end
@@ -131,10 +131,10 @@ module Prawn
               :height => text_height(record, b.width)
             ) do
               #@document.stroke_bounds
-              yield @document, record
+              yield @document, record, index
             end
           else
-            yield @document, record
+            yield @document, record, index
           end
         end
       end
